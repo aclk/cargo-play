@@ -3,6 +3,7 @@ use std::iter::FromIterator;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::vec::Vec;
+use sha1::{Sha1, Digest};
 use structopt::StructOpt;
 
 use crate::errors::CargoPlayError;
@@ -11,16 +12,19 @@ use crate::errors::CargoPlayError;
 pub enum RustEdition {
     E2015,
     E2018,
+	E2021,
 }
 
 impl FromStr for RustEdition {
     type Err = CargoPlayError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "2018" {
-            Ok(RustEdition::E2018)
-        } else if s == "2015" {
+		if s == "2015" {
             Ok(RustEdition::E2015)
+        } else if s == "2018" {
+            Ok(RustEdition::E2018)
+        } else if s == "2021" {
+            Ok(RustEdition::E2021)
         } else {
             Err(CargoPlayError::InvalidEdition(s.into()))
         }
@@ -32,13 +36,14 @@ impl Into<String> for RustEdition {
         match self {
             RustEdition::E2015 => "2015".into(),
             RustEdition::E2018 => "2018".into(),
+            RustEdition::E2021 => "2021".into(),
         }
     }
 }
 
 impl Default for RustEdition {
     fn default() -> Self {
-        RustEdition::E2018
+        RustEdition::E2021
     }
 }
 
@@ -90,8 +95,8 @@ pub struct Options {
     #[structopt(
         short = "e",
         long = "edition",
-        default_value = "2018",
-        possible_values = &["2015", "2018"]
+        default_value = "2021",
+        possible_values = &["2015", "2018", "2021"]
     )]
     /// Specify Rust edition
     pub edition: RustEdition,
@@ -147,7 +152,7 @@ impl Options {
 
     /// Generate a string of hash based on the path passed in
     pub fn src_hash(&self) -> String {
-        let mut hash = sha1::Sha1::new();
+        let mut hash = Sha1::new();
         let mut srcs = self.src.clone();
 
         srcs.sort();
@@ -156,7 +161,7 @@ impl Options {
             hash.update(file.to_string_lossy().as_bytes());
         }
 
-        bs58::encode(hash.digest().bytes()).into_string()
+        bs58::encode(hash.finalize()).into_string()
     }
 
     pub fn temp_dirname(&self) -> PathBuf {

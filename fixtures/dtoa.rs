@@ -1,11 +1,10 @@
-//# rand = "0.5.0"
+//# rand = "0.8.5"
 //# dtoa = { git = "https://github.com/dtolnay/dtoa.git" }
 
 fn main() -> std::io::Result<()> {
-    let mut buf = Vec::new();
-    dtoa::write(&mut buf, 2.71828f64)?;
+    let mut buf = dtoa::Buffer::new();
 
-    println!("{:?}", buf);
+    println!("{:?}", buf.format(2.71828f64));
 
     Ok(())
 }
